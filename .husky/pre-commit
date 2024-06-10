@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# Run Prettier to format code
+npx prettier --write . 
+
+# Run ESLint
+npm run lint  
+
+# Run build script
+npm run build
+
+# If any of the above commands fail, exit with a non-zero status
+if [ $? -ne 0 ]; then
+    echo "Pre-commit checks failed, commit aborted"
+    exit 1
+fi

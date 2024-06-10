@@ -1,0 +1,22 @@
+{
+  "extends": "@istanbuljs/nyc-config-typescript",
+  "exclude": [
+    "dist/**/*.js",
+    "node_modules/**",
+    "coverage/**",
+    "src/config/database.ts",
+    "test/**",
+    "src/utils/swagger.ts",
+    "index.ts",
+    "src/database",
+    "src/docs"
+  ],
+  "cache": false,
+  "all": true,
+  "reporter": ["text", "lcov", "html"],
+  "check-coverage": true,
+  "lines": 85,
+  "branches": 85,
+  "functions": 85,
+  "statements": 85
+}

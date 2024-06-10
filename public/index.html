@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Real-Time Notifications</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f4;
+        margin: 0;
+        padding: 20px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+      #notification-container {
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        width: 100%;
+        max-width: 400px;
+      }
+      h1 {
+        text-align: center;
+        color: #333;
+      }
+      .notification {
+        background-color: #e7f4e4;
+        border: 1px solid #d4e5d2;
+        padding: 10px;
+        margin: 10px 0;
+        border-radius: 5px;
+        color: #3c763d;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="notification-container">
+      <h1>Real-Time Notifications</h1>
+      <div id="notifications"></div>
+    </div>
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script>
+      let token = prompt('Please enter your token to login', '')
+
+      const socket = io('/', {
+        auth: { token },
+      })
+      socket.on('notification', (data) => {
+        const notificationsDiv = document.getElementById('notifications')
+        const notificationElement = document.createElement('div')
+        notificationElement.classList.add('notification')
+        notificationElement.innerText = data.message
+        notificationsDiv.appendChild(notificationElement)
+      })
+    </script>
+  </body>
+</html>

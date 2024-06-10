@@ -1,0 +1,56 @@
+# This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
+
+name: CI
+
+on:
+  pull_request: {}
+
+env:
+  COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
+  TEST_DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
+  JWT_SECRET: ${{ secrets.JWT_SECRET }}
+  JWT_EXPIRE_TIME: ${{ secrets.JWT_EXPIRE_TIME}}
+  DB_HOST_TYPE: ${{ secrets.DB_HOST_TYPE }}
+  PROD_DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+  DEV_DATABASE_URL: ${{ secrets.DEV_DATABASE_URL }}
+  PORT: ${{ secrets.PORT }}
+  CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
+  CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
+  CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
+  REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
+  REDIS_HOST: ${{ secrets.REDIS_HOST }}
+  REDIS_PORT: ${{ secrets.REDIS_PORT }}
+  NODEMAILER_SERVICE: ${{ secrets.NODEMAILER_SERVICE }}
+  NODEMAILER_HOST: ${{ secrets.NODEMAILER_HOST }}
+  NODEMAILER_EMAIL_PORT: ${{ secrets.NODEMAILER_EMAIL_PORT }}
+  NODEMAILER_USER: ${{ secrets.NODEMAILER_USER }}
+  NODEMAILER_PASS: ${{ secrets.NODEMAILER_PASS }}
+  NODEMAILER_SECURE: ${{ secrets.NODEMAILER_SECURE }}
+  CLIENT_ID: ${{ secrets.CLIENT_ID}}
+  CLIENT_SECRET: ${{ secrets.CLIENT_SECRET}}
+  CALLBACK_URL: ${{ secrets.CALLBACK_URL}}
+  PASSWORD_EXPIRATION_TIME: ${{secrets.PASSWORD_EXPIRATION_TIME}}
+  URL: ${{ secrets.URL}}
+  STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY}}
+
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [20.x]
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+      - run: npm install
+      - run: npm ci
+      - run: npm run build --if-present
+      - run: npm test

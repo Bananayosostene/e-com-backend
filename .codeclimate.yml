@@ -1,0 +1,36 @@
+version: '2'
+
+checks:
+  complex-logic:
+    enabled: false
+  method-complexity:
+    enabled: false
+  file-lines:
+    config:
+      threshold: 500
+  method-lines:
+    enabled: false
+    config:
+      threshold: 100
+    eslint:
+      enabled: true
+  return-statements:
+    enabled: true
+    config:
+      threshold: 50
+  similar-code:
+    enabled: false
+    config:
+      threshold: 75
+  identical-code:
+    enabled: true
+    config:
+      threshold: 75
+
+exclude_patterns:
+  - '**/package-lock.json/'
+  - '**/.env/*'
+  - '**/test/*'
+  - '**/tests/*'
+  - '**/dist/*'
+  - '**/coverage/*'

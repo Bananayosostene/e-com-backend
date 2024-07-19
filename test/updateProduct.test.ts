@@ -14,53 +14,6 @@ import productController from '../src/controllers/productController';
 chai.use(chaiHttp);
 const { expect } = chai;
 
-describe('ProductController.getProducts', () => {
-    let req: Partial<Request>;
-    let res: Partial<Response>;
-    let status: sinon.SinonStub;
-    let json: sinon.SinonStub;
-
-    beforeEach(() => {
-        req = {};
-        res = {
-            status: sinon.stub().returnsThis(),
-            json: sinon.stub()
-        };
-        status = res.status as sinon.SinonStub;
-        json = res.json as sinon.SinonStub;
-    });
-
-    afterEach(() => {
-        sinon.restore();
-    });
-
-    it('should return products for the signed in user', async () => {
-        req.user = { id: 1 };
-        const mockProducts = [
-            sinon.createStubInstance(Product),
-            sinon.createStubInstance(Product)
-        ];
-
-        sinon.stub(Product, 'findAll').resolves(mockProducts as any);
-
-        await ProductController.getProducts(req as Request, res as Response);
-
-        expect(status.calledWith(200)).to.be.true;
-        expect(json.calledWith(mockProducts)).to.be.true;
-    });
-
-    it('should return 500 on server error', async () => {
-        req.user = { id: 1 };
-
-        sinon.stub(Product, 'findAll').rejects(new Error('Database Error'));
-
-        await ProductController.getProducts(req as Request, res as Response);
-
-        expect(status.calledWith(500)).to.be.true;
-        expect(json.calledWith({ message: 'Internal Server error' })).to.be.true;
-    });
-});
-
 describe('ProductController.updateProduct', () => {
     let req: Partial<Request>;
     let res: Partial<Response>;

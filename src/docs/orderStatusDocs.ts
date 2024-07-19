@@ -68,14 +68,6 @@
  *           enum:
  *             - creditCard
  *             - mobileMoney
- *         cardNumber:
- *           type: string
- *         cardHolderName:
- *           type: string
- *         expiryDate:
- *           type: string
- *         cvv:
- *           type: string
  *         mobileMoneyNumber:
  *           type: string
  */
@@ -173,4 +165,100 @@
  *                 message:
  *                   type: string
  *                   example: An error occurred while processing the order
+ * /orders/all:
+ *   get:
+ *     summary: Get All Orders
+ *     description: Get all orders as an admin
+ *     tags:
+ *       [orders]
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: The page
+ *       - in: query
+ *         name: limit
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: The limit of Orders
+ *     responses:
+ *       '200':
+ *         description: Orders retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Orders retrieved successfully
+ *       '400':
+ *         description: Bad Request
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: no Orders found
+ *       '401':
+ *         description: Unauthorized
+ *       '500':
+ *         description: Internal server error
+ */
+
+/**
+ * @swagger
+ * /orders/{orderId}:
+ *   get:
+ *     summary: Get buyer order
+ *     description: Get order created by a buyer
+ *     tags:
+ *       [orders]
+ *     parameters:
+ *       - in: path
+ *         name: orderId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Order Id
+ *     responses:
+ *       '200':
+ *         description: Orders retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Orders retrieved successfully
+ *       '400':
+ *         description: Bad Request
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Seller has no Order
+ *       '401':
+ *         description: Unauthorized
+ *       '404':
+ *         description: Order not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Order not found
+ *       '500':
+ *         description: Internal server error
  */

@@ -14,6 +14,8 @@ export default class cartController {
    * @returns {Promise<Response>} Promise that resolves to an Express response
    */
   static async addToCart(req: Request, res: Response): Promise<Response> {
+
+    try{
     const { quantity } = req.body
 
     const { productId } = req.params
@@ -101,6 +103,9 @@ export default class cartController {
     return res
       .status(201)
       .json({ message: 'Product added to cart successfully', cart })
+  } catch (error) {
+    return res.status(500).json({message: 'Internal server error', error: error.message})
+  }
   }
 
   /**
@@ -174,6 +179,8 @@ export default class cartController {
    * @returns {Promise<Response>} promise that resolves to an Express response 
    */
   static async updateCart(req: Request, res: Response): Promise<Response> {
+
+    try{
   const { items } = req.body
 
   if (!items) {
@@ -237,7 +244,7 @@ export default class cartController {
       if (quantityNumber > product.quantity) {
         return res.status(400).json({ message: 'Insufficient stock' })
       }
-//  code
+
       updatedItems.push(cartItem)
       newTotalPrice += product.price * quantityNumber
       newTotalQuantity += quantityNumber
@@ -261,6 +268,9 @@ export default class cartController {
     message: 'Cart updated successfully',
     cart: updatedCart,
   })
+} catch (error) {
+  return res.status(500).json({message: 'Internal server error', error: error.message})
+}
 }
 
   /**
@@ -273,6 +283,7 @@ export default class cartController {
     req: Request,
     res: Response,
   ): Promise<Response> {
+    try{
     const { productId } = req.params
     const userId = req.user?.id
    if (!userId) {
@@ -313,6 +324,9 @@ export default class cartController {
     return res
       .status(200)
       .json({ message: 'Product removed from cart successfully', cart })
+  } catch (error) {
+    return res.status(500).json({message: 'Internal server error', error: error.message})
+  }
   }
 }
 

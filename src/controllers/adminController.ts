@@ -3,22 +3,48 @@ import User from '../database/models/userModel'
 import sendMail from '../utils/sendEmail'
 import disableUserTemplate from '../utils/emailTemplates/disableUserTemplate'
 import enableUserTemplate from '../utils/emailTemplates/enableUserTemplate'
+import Paginator from '../utils/paginator'
+import { getUsersCount } from '../services/userServices'
+
 export default class adminContoller {
-  /**
-   * Update user status
-   * @param {Request} req - Express request object
-   * @param {Response} res - Express response object
-   * @param {string} newStatus - New status to set for the user
-   * @returns {Promise<Response>} Promise that resolves to an Express response
-   */
-  static async getAllUsers(req: Request, res: Response): Promise<Response> {
-    try {
-      const users = await User.findAll()
-      return res.status(200).json(users)
-    } catch (error) {
-      return res.status(500).json({ error: error.message })
-    }
+/**
+ * Get all users
+ * @param {Request} req - Express request object
+ * @param {Response} res - Express response object
+ * @returns {Promise<Response>} Promise that resolves to an Express response
+ */
+static async getAllUsers(req: Request, res: Response): Promise<Response> {
+  try {
+    
+    const paginationResults = Paginator(req, res)
+
+    if(!paginationResults){
+      return res
+  .status(400)
+  .json({ message: 'Invalid pagination parameters' })
+}
+
+const {offset, limit, page} = paginationResults
+
+const totalCount: number = await getUsersCount()
+const totalPages = Math.ceil(totalCount / limit)
+
+    const users = await User.findAll({
+      attributes: { exclude: ['password'] },
+      offset,
+      limit
+    });
+    return res.status(200).json({
+      message: 'Users retrieved successfully',
+      users,
+      pagination: { limit, page, totalPages },
+    });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
   }
+}
+
+
   /**
    * Update user status
    * @param {Request} req - Express request object

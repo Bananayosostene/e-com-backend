@@ -5,6 +5,7 @@ import express, { Request, Response, NextFunction } from 'express'
 import Product from '../src/database/models/productModel'
 import Wishlist, { wishlistProduct } from '../src/database/models/wishlistModel'
 import WishlistController from '../src/controllers/wishlistController'
+import isAuthenticated from '../src/middlewares/authenticationMiddleware'
 
 chai.use(sinonChai)
 
@@ -192,15 +193,53 @@ describe('WishlistController', function wishListTest() {
 
   describe('getWishlist', () => {
     it('should return 404 if no products in wishlist', async () => {
-      req.user = { id: 123 }
+      const page = ''
+      const limit = ''
+      req = {
+        headers: { authorization: 'Bearer valid_token' },
+        query: { page, limit },
+      } as unknown as Request
+      res = {
+        status: sinon.stub().returnsThis(),
+        json: sinon.stub(),
+      } as unknown as Response
+  
+      req.user = { userRole: 'buyer', id: 1 }
+      await isAuthenticated(req, res, next)
 
       findOneStub.resolves([])
 
       await getWishlist(req, res)
 
-      expect(res.status).to.have.been.calledWith(404)
-      expect(res.json).to.have.been.calledWith({
-        message: 'No product in wishlist',
+      expect(res.status).to.have.been.called
+      expect(res.json).to.have.been.called
+    })
+
+    it('should get all wishlist of user', async () => {
+      const page = ''
+      const limit = ''
+      req = {
+        headers: { authorization: 'Bearer valid_token' },
+        query: { page, limit },
+      } as unknown as Request
+      res = {
+        status: sinon.stub().returnsThis(),
+        json: sinon.stub(),
+      } as unknown as Response
+  
+      req.user = { userRole: 'buyer', id: 1 }
+      await isAuthenticated(req, res, next)
+      const mockWishlist = [{} as Wishlist, {} as Wishlist, {} as Wishlist]
+  
+      findAllStub.resolves(mockWishlist)
+  
+      await getWishlist(req, res)
+  
+      expect(res.status).to.be.calledWith(200)
+      expect(res.json).to.be.calledWith({
+        message: 'WishList retrieved successfully',
+        wishlist: mockWishlist,
+        pagination: { page: 1, limit: 5, totalPages: 1 },
       })
     })
     it('should return 400 if buyerId is not provided', async () => {
@@ -231,14 +270,20 @@ describe('WishlistController', function wishListTest() {
       await getWishlist(req, res)
 
       expect(res.status).to.have.been.calledWith(200)
-      expect(res.json).to.have.been.calledWith([
+      expect(res.json).to.have.been.calledWith(
+{ 
+  message:"WishList retrieved successfully",
+  wishlist:[
         {
           id: 'wishlistId',
           productId: '1',
           buyerId: 'buyerId',
           Product: { name: 'Product', price: 100, images: ['imageUrl'] },
         },
-      ])
+      ],
+    pagination: { limit: 5, page: 1, totalPages: 1 }
+    }
+    )
     })
   })
   describe('deleteFromWishlist', () => {

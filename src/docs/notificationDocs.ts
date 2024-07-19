@@ -37,6 +37,19 @@
  *   get:
  *     summary: Get notifications for the authenticated user
  *     tags: [Notifications]
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: The page
+ *       - in: query
+ *         name: limit
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: The limit of Collections
  *     responses:
  *       200:
  *         description: A list of notifications
@@ -46,49 +59,6 @@
  *               type: array
  *               items:
  *                 $ref: '#/components/schemas/Notification'
- *       500:
- *         description: Internal server error
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   description: Error message
- */
-
-/**
- * @swagger
- * /notifications/{notificationId}:
- *   get:
- *     summary: Get a single notification
- *     tags: [Notifications]
- *     parameters:
- *       - in: path
- *         name: notificationId
- *         schema:
- *           type: string
- *           format: uuid
- *         required: true
- *         description: The ID of the notification
- *     responses:
- *       200:
- *         description: A single notification
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Notification'
- *       404:
- *         description: Notification not found
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   description: Error message
  *       500:
  *         description: Internal server error
  *         content:

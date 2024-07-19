@@ -6,6 +6,7 @@ import sinon from 'sinon'
 import redisClient from '../src/utils/redisConfiguration'
 import twofaVerifyOtp from '../src/controllers/UserController'
 import LoginController from '../src/controllers/LoginController'
+import * as tokenHelpers from '../src/utils/jwt'
 
 describe('2FA For sellers', () => {
   let req: Partial<Request>
@@ -58,22 +59,46 @@ describe('2FA For sellers', () => {
       sinon.restore()
     })
 
-    it('should return 200 if OTP is valid', async () => {
-      sinon.stub(redisClient, 'get').resolves('1234=token123')
-      sinon.stub(redisClient, 'del').resolves()
+ it('should return 200 if OTP is valid', async () => {
+   // Mock request
+   const req = {
+     body: { otp: '1234' },
+     params: { email: 'test@example.com' },
+   } as unknown as Request
 
-      await twofaVerifyOtp.twofaVerifyOtp(req as Request, res as Response)
+   // Mock response
+   const res = {
+     status: sinon.stub().returnsThis(),
+     json: sinon.stub(),
+   } as unknown as Response
 
-      expect((res.status as sinon.SinonStub).calledWith(200)).to.be.true
-      expect(
-        (res.json as sinon.SinonStub).calledWith({
-          jwt: 'token123',
-          message: 'Login successful',
-        }),
-      ).to.be.true
+   // Mock Redis client
+   const redisGetStub = sinon.stub(redisClient, 'get').resolves('1234=token123')
+   const redisDelStub = sinon.stub(redisClient, 'del').resolves()
+   const redisSetExStub = sinon.stub(redisClient, 'setEx').resolves()
 
-      sinon.restore()
-    })
+   // Mock token decoding
+   const decodeTokenStub = sinon
+     .stub(tokenHelpers, 'decodeToken')
+     .resolves({ id: '123' })
+
+   await twofaVerifyOtp.twofaVerifyOtp(req, res)
+
+   expect(redisGetStub.calledWith('test@example.com')).to.be.true
+   expect(redisDelStub.calledWith('test@example.com')).to.be.true
+   expect(decodeTokenStub.calledWith('token123')).to.be.true
+   expect(redisSetExStub.calledWith('user:123', 86400, 'token123')).to.be.true
+    expect((res.status as sinon.SinonStub).calledWith(200)).to.be.true
+    expect(
+      (res.json as sinon.SinonStub).calledWith({
+        jwt: 'token123',
+        message: 'Login successful',
+      }),
+    ).to.be.true
+
+   // Restore stubs
+   sinon.restore()
+ })
   })
   it('should return 500 if an error occurs', async () => {
     sinon.stub(redisClient, 'get').throws(new Error('Simulated error'))

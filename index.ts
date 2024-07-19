@@ -33,6 +33,7 @@ import productExpiryCron from './src/controllers/productExpiryCronJob'
 import registerChatNamespace from './src/utils/chatNamespace'
 import stripeRoute from './src/routes/stripeRoute'
 import paymentRoute from './src/routes/paymentStripeRoute'
+import statsRoute from './src/routes/statsRoute'
 import { passwordExpiryCron } from './src/utils/passwordUpdateEvent'
 
 dotenv.config()
@@ -64,6 +65,7 @@ app.use('/checkout', checkoutRoute)
 app.use('/chat', chatRoute)
 app.use('/payment', MoMoRoute)
 app.use('/payment', paymentRoute)
+app.use('/stats', statsRoute)
 
 app.use(notFoundHandler)
 

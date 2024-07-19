@@ -4,6 +4,19 @@
  *   get:
  *     summary: Get all users
  *     tags: [USERS]
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: The page
+ *       - in: query
+ *         name: limit
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: The limit of Users
  *     responses:
  *       200:
  *         description: A list of users

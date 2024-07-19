@@ -5,12 +5,6 @@ import { authenticate } from 'passport'
 
 const router = Router()
 router.get('/', isAuthenticated, notificationController.getNotifications)
-
-router.get(
-  '/:notificationId',isAuthenticated,
-  notificationController.getSingleNotification
-)
-
 router.put(
     '/:notificationId/one',
     isAuthenticated,

@@ -22,7 +22,6 @@ describe('CheckoutController', () => {
           town: 'Townsville',
           email: 'john@example.com',
           paymentMethod: 'creditCard',
-          cardNumber: '4111111111111111',
         },
         user: {
           id: 1,
@@ -65,11 +64,7 @@ describe('CheckoutController', () => {
         status: OrderStatus.PENDING,
         deliveryInfo: req.body,
         paymentInfo: {
-          method: 'creditCard',
-          cardNumber: '4111111111111111',
-          cardHolderName: 'Customer',
-          expiryDate: '2030-12-12T00:00:00',
-          cvv: '123',
+          method: 'creditCard'
         },
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),

@@ -7,13 +7,14 @@ import isAuthenticated from '../src/middlewares/authenticationMiddleware'
 import { JWT_SECRET, JWT_EXPIRE_TIME } from '../src/config'
 import * as userServiceHelpers from '../src/services/userServices'
 import * as tokenHelpers from '../src/utils/jwt'
-import User from '../src/database/models/userModel'
+import User, { UserRole } from '../src/database/models/userModel'
 import { Socket } from 'socket.io'
 import { ExtendedError } from 'socket.io/dist/namespace'
 import socketAuthMiddleware from '../src/middlewares/socketMiddleware'
 import { UserAttributes } from '../src/database/models/userModel'
 import checkCartMiddleware from '../src/middlewares/checkCartMiddleware'
 import Cart from '../src/database/models/cartModel'
+import redisClient from '../src/utils/redisConfiguration'
 
 chai.use(sinonChai)
 
@@ -24,6 +25,7 @@ describe('isAuthenticated function', () => {
   let jwtVerifyStub: sinon.SinonStub
   let getUserByIdStub: sinon.SinonStub
   let decodeTokenStub: sinon.SinonStub
+   let redisGetStub: sinon.SinonStub
   let sandbox: sinon.SinonSandbox
 
   beforeEach(() => {
@@ -71,25 +73,15 @@ describe('isAuthenticated function', () => {
     expect(next).to.not.be.calledOnce
   })
 
-  it('--1-- should call next() with valid token', async () => {
+ it('--1-- should call next() with valid token', async () => {
     const data = { id: 1, email: 'test@example.com' }
     const myToken = jwt.sign(data, JWT_SECRET, {
       expiresIn: JWT_EXPIRE_TIME,
     })
-    const mockDecoded = { userId: 1, username: 'testuser' }
     req.headers = { authorization: `Bearer ${myToken}` }
-    jwtVerifyStub.returns(mockDecoded)
 
     jwtVerifyStub.callsFake((token, secret, callback) => {
-      token = myToken
-      const mockDecoded1 = {
-        id: 1,
-        email: 'test@example.com',
-        userRole: 'admin',
-      }
-      res.locals.decoded = mockDecoded1
-      req.user = mockDecoded1
-      callback(null, mockDecoded1)
+      callback(null, { id: 1, email: 'test@example.com' })
     })
 
     decodeTokenStub = sandbox
@@ -98,35 +90,46 @@ describe('isAuthenticated function', () => {
     getUserByIdStub = sandbox
       .stub(userServiceHelpers, 'getUserById')
       .resolves({ id: 1, email: 'test@example.com' } as User)
+    redisGetStub = sandbox
+      .stub(redisClient, 'get')
+      .resolves(myToken)
+
     await isAuthenticated(req, res, next)
 
     expect(decodeTokenStub).to.have.been.called
     expect(getUserByIdStub).to.have.been.called
+    expect(redisGetStub).to.have.been.calledWith(`user:1`)
     expect(res.locals.decoded).to.have.property('id').equals(1)
-    expect(req.user).to.deep.equal(data)
-    expect(next).to.be.calledOnce
+    expect(req.user).to.deep.equal({ id: 1, email: 'test@example.com' })
+    expect(next).to.have.been.calledOnce
   })
 
   it('--2 should call next() with valid token', async () => {
     const mockToken = 'valid.jwt.token'
-    const mockDecoded = { userId: 1, username: 'testuser' }
     req.headers = { authorization: `Bearer ${mockToken}` }
 
-    jwtVerifyStub.callsFake((token, secret, callback) =>
-      callback(null, mockDecoded),
-    )
+    jwtVerifyStub.callsFake((token, secret, callback) => {
+      callback(null, { id: 1, email: 'test@example.com' })
+    })
+
     decodeTokenStub = sandbox
       .stub(tokenHelpers, 'decodeToken')
       .resolves({ id: 1, email: 'test@example.com' })
     getUserByIdStub = sandbox
       .stub(userServiceHelpers, 'getUserById')
       .resolves({ id: 1, email: 'test@example.com' } as User)
+    redisGetStub = sandbox
+      .stub(redisClient, 'get')
+      .resolves(mockToken)
 
     await isAuthenticated(req, res, next)
 
+    expect(decodeTokenStub).to.have.been.called
+    expect(getUserByIdStub).to.have.been.called
+    expect(redisGetStub).to.have.been.calledWith(`user:1`)
     expect(res.locals.decoded).to.have.property('id').equals(1)
-    expect(req.user).to.have.property('id').equals(1)
-    expect(next).to.be.called
+    expect(req.user).to.deep.equal({ id: 1, email: 'test@example.com' })
+    expect(next).to.have.been.calledOnce
   })
 
   it('should return 500 Internal Server Error if an unexpected error occurs', async () => {
@@ -293,6 +296,95 @@ describe('isAuthenticated function', () => {
     expect(res.json).to.have.been.calledWith({
       message: 'no access token found',
     })
+    expect(next).not.to.have.been.called
+  })
+
+  it('should allow authenticated seller with valid OTP token', async () => {
+    const user:any = {
+      id: 1,
+      email: 'seller@example.com',
+      userRole: UserRole.SELLER,
+    }
+    const otpToken = 'validOTP=123456'
+    const token = '123456'
+
+    req.headers = { authorization: `Bearer ${token}` }
+
+    jwtVerifyStub.callsFake((token, secret, callback) => {
+      callback(null, user)
+    })
+
+    decodeTokenStub = sandbox.stub(tokenHelpers, 'decodeToken').resolves(user)
+
+    getUserByIdStub = sandbox
+      .stub(userServiceHelpers, 'getUserById')
+      .resolves(user)
+
+    redisGetStub = sandbox
+      .stub(redisClient, 'get')
+      .withArgs(user.email)
+      .resolves(otpToken)
+
+    await isAuthenticated(req, res, next)
+
+    expect(decodeTokenStub).to.have.been.called
+    expect(getUserByIdStub).to.have.been.called
+    expect(redisGetStub).to.have.been.calledWith(user.email)
+    expect(req.user).to.deep.equal(user)
+    expect(res.locals.decoded).to.deep.equal(user)
+    expect(next).to.have.been.calledOnce
+  })
+
+
+   it('should return 401 if token in Redis does not exist', async () => {
+    const data = { id: 1, email: 'test@example.com' }
+    const myToken = jwt.sign(data, JWT_SECRET, {
+      expiresIn: JWT_EXPIRE_TIME,
+    })
+    const mockDecoded = { id: 1, email: 'test@example.com' }
+
+    req.headers = { authorization: `Bearer ${myToken}` }
+    jwtVerifyStub.returns(mockDecoded)
+
+    decodeTokenStub = sandbox
+      .stub(tokenHelpers, 'decodeToken')
+      .resolves(mockDecoded)
+    getUserByIdStub = sandbox
+      .stub(userServiceHelpers, 'getUserById')
+      .resolves({ id: 1, email: 'test@example.com' } as User)
+    redisGetStub = sandbox.stub(redisClient, 'get').resolves(null)
+
+    await isAuthenticated(req, res, next)
+
+    expect(redisGetStub).to.have.been.calledWith(`user:${mockDecoded.id}`)
+    expect(res.status).to.have.been.calledWith(401)
+    expect(res.json).to.have.been.calledWith({ message: 'Please login again' })
+    expect(next).not.to.have.been.called
+  })
+
+  it('should return 401 if token in Redis does not match provided token', async () => {
+    const data = { id: 1, email: 'test@example.com' }
+    const myToken = jwt.sign(data, JWT_SECRET, {
+      expiresIn: JWT_EXPIRE_TIME,
+    })
+    const mockDecoded = { id: 1, email: 'test@example.com' }
+
+    req.headers = { authorization: `Bearer ${myToken}` }
+    jwtVerifyStub.returns(mockDecoded)
+
+    decodeTokenStub = sandbox
+      .stub(tokenHelpers, 'decodeToken')
+      .resolves(mockDecoded)
+    getUserByIdStub = sandbox
+      .stub(userServiceHelpers, 'getUserById')
+      .resolves({ id: 1, email: 'test@example.com' } as User)
+    redisGetStub = sandbox.stub(redisClient, 'get').resolves('differentToken')
+
+    await isAuthenticated(req, res, next)
+
+    expect(redisGetStub).to.have.been.calledWith(`user:${mockDecoded.id}`)
+    expect(res.status).to.have.been.calledWith(401)
+    expect(res.json).to.have.been.calledWith({ message: 'Please login again' })
     expect(next).not.to.have.been.called
   })
 

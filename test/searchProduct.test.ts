@@ -3,7 +3,7 @@ import sinon from 'sinon'
 import sinonChai from 'sinon-chai'
 import express, { Request, Response, NextFunction } from 'express'
 import Product from '../src/database/models/productModel'
-import searchController from '../src/controllers/searchProduct'
+import searchController from '../src/controllers/searchController'
 import { UserRole } from '../src/database/models/userModel'
 import * as productService from '../src/services/productServices'
 
@@ -141,4 +141,4 @@ describe('ProductController - searchProducts', () => {
     })
   })
 })
-// 
+//

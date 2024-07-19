@@ -318,6 +318,7 @@ static async listAllCollections(
     req: Request,
     res: Response,
   ): Promise<Response> {
+    try{
     const sellerId = req.user.id
     const productId = req.params.productId
     const { productStatus } = req.body
@@ -347,6 +348,9 @@ static async listAllCollections(
       data: updatedProduct,
       message: `Product updated as ${productStatus}`,
     })
+  } catch (error) {
+    return res.status(500).json({message: 'Internal server error', error: error.message})
+  }
   }
 
   /**
@@ -369,6 +373,150 @@ static async listAllCollections(
       }
     } catch (error) {
       return res.status(500).json({ message: 'Internal server error' })
+    }
+  }
+
+  /**
+   * List products
+   * @param {Request} req - Express request object
+   * @param {Response} res - Express response object
+   * @returns {Promise<Response>} Promise that resolves to an Express response
+   */
+  static async listUserProducts(req: Request, res: Response): Promise<Response> {
+    try {
+     
+      const page: number =
+        Number.parseInt(req.query.page as unknown as string, 10) || 1
+      const limit: number =
+        Number.parseInt(req.query.limit as unknown as string, 10) || 5
+
+      if (
+        Number.isNaN(page) ||
+        Number.isNaN(limit) ||
+        page <= 0 ||
+        limit <= 0
+      ) {
+        return res
+          .status(400)
+          .json({ message: 'Invalid pagination parameters' })
+      }
+
+      const offset = (page - 1) * limit
+      const currentDate = moment().format('YYYY-MM-DD HH:mm:ssZ')
+      const totalCount: number = await getProductCount()
+      const totalPages = Math.ceil(totalCount / limit)
+
+      const products = await Product.findAll({
+              where: {
+                productStatus: 'available',
+                expiryDate: {
+                  [Op.gt]: currentDate,
+                },
+              },
+              offset,
+              limit,
+            })
+
+
+      return res.status(200).json({
+        message: 'Products retrieved successfully',
+        products,
+        pagination: { limit, page, totalPages },
+      })
+    } catch (error) {
+      return res
+        .status(500)
+        .json({ message: 'Internal server error', error: error.message })
+    }
+  }
+
+  /**
+   * Retrieves the details of a product.
+   * @param {Request} req - The Express request object.
+   * @param {Response} res - The Express response object.
+   * @returns {Promise<Response>} - A promise that resolves to an Express response.
+   */
+  static async listSingleUserProduct(
+    req: Request,
+    res: Response,
+  ): Promise<Response> {
+    // const userId = req.user?.id
+    // const userRole = req.user?.userRole
+    const productId = req.params.productId
+
+    try {
+      const product: CustomProduct | null = await Product.findByPk(productId, {
+        include: [
+          {
+            model: User,
+            as: 'seller',
+            attributes: ['id', 'username', 'email'],
+          },
+          {
+            model: Review,
+            as: 'reviews',
+            attributes: [
+              'id',
+              'rating',
+              'buyerId',
+              'feedback',
+              'createdAt',
+              'updatedAt',
+            ],
+            include: [
+              {
+                model: User,
+                as: 'buyer',
+                attributes: ['id', 'username'],
+              },
+            ],
+          },
+        ],
+      })
+
+      if (!product) {
+        return res.status(404).json({ status: 404, error: 'Product not found' })
+      }
+
+      const reviews = product.reviews || []
+      
+      const totalRating = reviews.reduce(
+        (acc: number, review: any) => acc + review.rating,
+        0,
+      )
+      const averageRating =
+        reviews.length > 0 ? totalRating / reviews.length : 0
+
+      const productWithAverageRating = {
+        ...product.toJSON(),
+        averageRating,
+      }
+
+        const currentDate = new Date()
+        if (
+          product.productStatus !== 'available' ||
+          product.expiryDate < currentDate
+        ) {
+          return res.status(404).json({
+            status: 404,
+            error:
+              product.productStatus !== 'available'
+                ? 'Product is currently unavailable'
+                : 'Product has expired',
+          })
+        }
+        if (product.quantity > 0) {
+          return res.status(200).json({
+            status: 200,
+            message: 'Product details retrieved successfully by buyer',
+            item: productWithAverageRating,
+          })
+        }
+      
+    } catch (error) {
+      return res
+        .status(500)
+        .json({ status: 500, error: 'Internal server error' })
     }
   }
 
@@ -491,26 +639,6 @@ static async listAllCollections(
         .status(500)
         .json({ message: 'Internal server error', error: error.message })
     }}
-
-  /**
-   * Get all products of the signed in user
-   * @param {Request} req - Express request object
-   * @param {Response} res - Express response object
-   * @returns {Promise<Response>} Promise that resolves to an Express response
-   */
-  static async getProducts(req: Request, res: Response): Promise<Response> {
-    try {
-      const sellerId = req.user?.id
-      const products = await Product.findAll({
-        where: {
-          sellerId,
-        },
-      })
-      return res.status(200).json(products)
-    } catch (error) {
-      return res.status(500).json({ message: 'Internal Server error' })
-    }
-  }
   
   /**
    * update product

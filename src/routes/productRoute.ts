@@ -13,7 +13,7 @@ import productController from '../controllers/productController'
 import { UserRole } from '../database/models/userModel'
 import paramSchema,{ paramIdSchema } from '../validations/paramValidation'
 import multer from 'multer'
-import searchController from '../controllers/searchProduct'
+import searchController from '../controllers/searchController'
 import { reviewsValidationSchema } from '../validations/productValidation'
 import { addReview, getAllReviews } from '../controllers/reviewsController'
 import { checkProductPurchased } from '../middlewares/productMiddleware'
@@ -70,6 +70,16 @@ router.get(
   excludePermission(UserRole.SELLER),
   productController.listProducts,
 )
+
+router.get(
+  '/products/all',
+  productController.listUserProducts,
+)
+
+router.get(
+  '/products/single/:productId',
+  productController.listSingleUserProduct,
+)
 router.get(
   '/:collectionId/products',
   isAuthenticated,
@@ -77,12 +87,6 @@ router.get(
   productController.listCollectionProducts,
 )
 
-router.get(
-  '/product',
-  isAuthenticated,
-  checkPermission(UserRole.SELLER),
-  productController.getProducts,
-)
 router.put(
   '/:id/product',
   isAuthenticated,
@@ -107,6 +111,11 @@ router.get(
   '/products/search',
   isAuthenticated,
   searchController.searchProducts,
+)
+
+router.get(
+  '/products/all/search',
+  searchController.searchAllProducts,
 )
 router.post(
   '/product/:productId/reviews',

@@ -14,11 +14,11 @@ import {
   validateRedisToken,
 } from '../services/tokenServices'
 import { hashPassword } from '../utils/passwords'
-import { generateResetToken, generateToken } from '../utils/jwt'
+import { decodeToken, generateResetToken, generateToken } from '../utils/jwt'
 import { verificationsEmailTemplate } from '../utils/emailTemplates'
 import Token from '../database/models/tokenModel'
 import sendMail from '../utils/sendEmail'
-import { NODEMAILER_BASE_URL } from '../config'
+import { NODEMAILER_BASE_URL, RESET_BASE_URL } from '../config'
 import redisClient from '../utils/redisConfiguration'
 /**
  * User Controller class
@@ -171,6 +171,12 @@ export default class UserController {
         return res.status(406).json({ message: 'Invalid One Time Password' })
       }
       await redisClient.del(email)
+
+      // Decode the stored token to get user information
+      const decodedToken = await decodeToken(storedToken)
+
+      // Set the Redis token for authenticated seller
+      await redisClient.setEx(`user:${decodedToken.id}`, 86400, storedToken)
       return res
         .status(200)
         .json({ jwt: storedToken, message: 'Login successful' })
@@ -233,7 +239,7 @@ export default class UserController {
         username: user.username,
       })
 
-      const resetLink = `${NODEMAILER_BASE_URL}/users/reset-password/${token}`
+      const resetLink = `${RESET_BASE_URL}/users/reset-password/${token}`
 
       const msg = {
         to: user.email,
@@ -271,10 +277,10 @@ export default class UserController {
 
       const hashedPassword = await hashPassword(password)
       await user.update({
-         password: hashedPassword,
-         isExpired: false,
-         lastTimePasswordUpdate: new Date(),
-         })
+        password: hashedPassword,
+        isExpired: false,
+        lastTimePasswordUpdate: new Date(),
+      })
       await redisClient.del(token)
 
       return res

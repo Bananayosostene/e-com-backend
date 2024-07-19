@@ -100,6 +100,19 @@
    *     description: Retrieve the authenticated user's wishlist
    *     tags: 
    *       - WISHLIST
+   *     parameters:
+   *       - in: query
+   *         name: page
+   *         required: false
+   *         schema:
+   *           type: string
+   *         description: The page
+   *       - in: query
+   *         name: limit
+   *         required: false
+   *         schema:
+   *           type: string
+   *         description: The limit of Users
    *     responses:
    *       '200':
    *         description: List of wishlist items

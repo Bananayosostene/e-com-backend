@@ -68,14 +68,6 @@
  *           enum:
  *             - creditCard
  *             - mobileMoney
- *         cardNumber:
- *           type: string
- *         cardHolderName:
- *           type: string
- *         expiryDate:
- *           type: string
- *         cvv:
- *           type: string
  *         mobileMoneyNumber:
  *           type: string
  */
@@ -119,18 +111,6 @@
  *                 type: string
  *                 enum: [creditCard, mobileMoney]
  *                 example: creditCard
- *               cardNumber:
- *                 type: string
- *                 example: 4111111111111111
- *               cardHolderName:
- *                 type: string
- *                 example: Maxime Guy
- *               expiryDate:
- *                 type: string
- *                 example: 2025-12-31
- *               cvv:
- *                 type: string
- *                 example: 123
  *               mobileMoneyNumber:
  *                 type: string
  *                 example: 0781234567

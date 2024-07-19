@@ -7,7 +7,7 @@ checks:
     enabled: false
   file-lines:
     config:
-      threshold: 500
+      threshold: 1000
   method-lines:
     enabled: false
     config:

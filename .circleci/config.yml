@@ -1,17 +1,22 @@
-version: 2
+version: 2.1
 orbs:
   coveralls: coveralls/coveralls@1.0.6
 jobs:
   build:
     docker:
       - image: cimg/node:18.17.0
+      - image: cimg/postgres:14.1
+        environment:
+          POSTGRES_USER: circleci
+          POSTGRES_DB: test_db
+      - image: cimg/redis:6.2
     working_directory: ~/repo
     steps:
       - setup_remote_docker:
           version: default
       - checkout
       - run:
-          name: update-npm
+          name: Update npm
           command: 'sudo npm install -g npm@latest'
       - restore_cache:
           keys:
@@ -25,20 +30,26 @@ jobs:
             - node_modules
           key: v1-dependencies-{{ checksum "package-lock.json" }}
       - run:
+          name: Wait for DB
+          command: dockerize -wait tcp://localhost:5432 -timeout 1m
+      - run:
+          name: Wait for Redis
+          command: dockerize -wait tcp://localhost:6379 -timeout 1m
+      - run:
           name: Run tests
           command: npm test
-          when: always
+          environment:
+            DATABASE_URL: postgresql://circleci@localhost:5432/test_db
+            REDIS_URL: redis://localhost:6379
       - run:
           name: Run coverage
           command: npm run coverage
-          when: always
       - run:
           name: Upload coverage to Coveralls
           command: npx coveralls < coverage/lcov.info
       - run:
           name: Setup Code Climate test-reporter
           command: |
-            # download test reporter as a static binary
             curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
             chmod +x ./cc-test-reporter
             ./cc-test-reporter before-build
@@ -50,3 +61,8 @@ jobs:
       - store_artifacts:
           path: ./coverage/lcov.info
           prefix: tests
+workflows:
+  version: 2
+  build-and-test:
+    jobs:
+      - build

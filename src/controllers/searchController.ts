@@ -82,4 +82,45 @@ export default class searchController {
       return res.status(500).json({ message: 'Internal server error' })
     }
   }
+ 
+  /**
+   * Search product
+   * @param {Request} req - Express request object
+   * @param {Response} res - Express response object
+   * @returns {Promise<Response>} Promise that resolves to an Express response
+   */
+  static async searchAllProducts(req: Request, res: Response): Promise<Response> {
+
+
+    try {
+      const products = await searchProductsService(req.query)
+
+      if (products.length === 0) {
+        return res
+          .status(404)
+          .json({ message: 'No products match the search criteria' })
+      }
+        const currentDate = new Date()
+        const availableProducts = products.filter(
+          (product) =>
+            product.productStatus === 'available' &&
+            product.expiryDate > currentDate,
+        )
+        if (availableProducts.length === 0) {
+          return res.status(404).json({
+            status: 404,
+            message: 'No available products match the search criteria',
+          })
+        }
+        return res.status(200).json({
+          status: 200,
+          message: 'Product(s) retrieved successfully',
+          items: availableProducts,
+        })
+      
+    } catch (error) {
+      console.error(error)
+      return res.status(500).json({ message: 'Internal server error' })
+    }
+  }
 }

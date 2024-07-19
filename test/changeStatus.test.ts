@@ -6,14 +6,18 @@ import adminController from '../src/controllers/adminController';
 import User from '../src/database/models/userModel';
 import disableUserTemplate from '../src/utils/emailTemplates/disableUserTemplate';
 import enableUserTemplate from '../src/utils/emailTemplates/enableUserTemplate'
+import isAuthenticated from '../src/middlewares/authenticationMiddleware';
+import { NextFunction } from 'express-serve-static-core';
+
 chai.use(sinonChai);
 
 describe('Admin Controller', () => {
   describe('getAllUsers', () => {
-    let req: Request;
-    let res: Response;
-    let findAllStub: SinonStub;
-    let mockUsers: { id: number, name: string }[];
+  let req: Request;
+  let res: Response;
+  let next:NextFunction;
+  let findAllStub: SinonStub;
+  let mockUsers: { id: number, name: string }[];
 
     before(() => {
       mockUsers = [{ id: 1, name: 'Test1' }, { id: 2, name: 'Test2' }];
@@ -33,13 +37,33 @@ describe('Admin Controller', () => {
       findAllStub.restore();
     });
 
-    it('should return a status code of 200 if it gets all users', async () => {
-      findAllStub.resolves(mockUsers as any);
-      await adminController.getAllUsers(req, res);
-
-      expect(res.status).to.have.been.calledWith(200);
-      expect(res.json).to.have.been.calledWith(mockUsers);
-    });
+    it('should get all users for admin using default limit and page', async () => {
+      const page = ''
+      const limit = ''
+      req = {
+        headers: { authorization: 'Bearer valid_token' },
+        query: { page, limit },
+      } as unknown as Request
+      res = {
+        status: sinon.stub().returnsThis(),
+        json: sinon.stub(),
+      } as unknown as Response
+  
+      req.user = { userRole: 'admin', id: 1 }
+      await isAuthenticated(req, res, next)
+      const mockUsers = [{} as User, {} as User, {} as User]
+  
+      findAllStub.resolves(mockUsers)
+  
+      await adminController.getAllUsers(req, res)
+  
+      expect(res.status).to.be.calledWith(200)
+      expect(res.json).to.be.calledWith({
+        message: 'Users retrieved successfully',
+        users: mockUsers,
+        pagination: { page: 1, limit: 5, totalPages: 1 },
+      })
+    })
 
     it('should return a status code of 500 for an internal server error', async () => {
       findAllStub.rejects(new Error('Database Error'));

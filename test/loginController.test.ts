@@ -31,6 +31,7 @@ describe('Authentication Controllers', () => {
         status: sandbox.stub().returnsThis(),
         json: sandbox.stub(),
         send: sandbox.stub(),
+        setHeader: sandbox.stub(),
       } as unknown as express.Response
     })
 

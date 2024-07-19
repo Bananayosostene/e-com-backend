@@ -87,7 +87,61 @@ describe('processPayment', function processPaymentTest() {
       })
     })
 
-    it('should process the payment and update the order status successfully', async () => {
+    it('should return 3D Secure authentication required if payment requires action', async () => {
+      req.params = { orderId: 'orderId' }
+      req.body = {
+        currency: 'usd',
+        paymentMethodId: 'pm_card_authenticationRequired',
+      }
+      req.user = { id: 123 }
+
+      const order = {
+        id: 'orderId',
+        userId: 123,
+        totalAmount: 100,
+        status: OrderStatus.PENDING,
+        orderNumber: 'ECB123456',
+        expectedDeliveryDate: new Date(),
+        items: [
+          { productId: '83e28640-cf1c-40bf-ab03-da2cfeaaf27f', quantity: 2 },
+          { productId: '9e555bd6-0f36-454a-a3d5-89edef4ff9d1', quantity: 1 },
+        ],
+        save: sinon.stub().resolves(),
+      }
+
+      findByPkStub.resolves(order)
+
+      const paymentIntent = {
+        id: 'pi_1234567890',
+        status: 'requires_action',
+        next_action: {
+          type: 'redirect_to_url',
+          redirect_to_url: {
+            url: 'https://example.com/3ds-authentication',
+          },
+        },
+        amount: 100,
+        currency: 'usd',
+        payment_method: 'pm_card_authenticationRequired',
+        metadata: { orderId: 'orderId', userId: '123' },
+      }
+
+      stripePaymentIntentsCreateStub.resolves(paymentIntent)
+
+      await processPayment(req, res)
+
+      expect(order.status).to.equal(OrderStatus.INITIATED)
+
+      expect(res.status).to.have.been.calledWith(200)
+      expect(res.json).to.have.been.calledWith(
+        sinon.match({
+          message: '3D Secure authentication required',
+          redirectUrl: sinon.match.string,
+        }),
+      )
+    })
+
+    it('should process the payment if no 3D required and update the order status successfully', async () => {
       req.params = { orderId: 'orderId' }
       req.body = { currency: 'usd', paymentMethodId: 'pm_card_visa' }
       req.user = { id: 123 }
@@ -108,13 +162,27 @@ describe('processPayment', function processPaymentTest() {
 
       findByPkStub.resolves(order)
 
+      const paymentIntent = {
+        id: 'pi_1234567890',
+        status: 'succeeded',
+        amount: 100,
+        currency: 'usd',
+        payment_method: 'pm_card_visa',
+        metadata: { orderId: 'orderId', userId: '123' },
+      }
+
+      stripePaymentIntentsCreateStub.resolves(paymentIntent)
+
       await processPayment(req, res)
 
       expect(order.status).to.equal(OrderStatus.INITIATED)
       expect(order.save).to.have.been.calledOnce
       expect(res.status).to.have.been.calledWith(200)
       expect(res.json).to.have.been.calledWith({
-        message: 'Payment initiated',
+        clientSecret: sinon.match.string,
+        message: 'Payment intent created and confirmed',
+        paymentIntentId:  sinon.match.string,
+        success: true,
       })
     })
   })

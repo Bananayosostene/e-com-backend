@@ -1,6 +1,8 @@
 import { Request, Response } from 'express'
 import Product from '../database/models/productModel'
 import Wishlist, { wishlistProduct } from '../database/models/wishlistModel'
+import Paginator from '../utils/paginator'
+import { getWishlistsCount } from '../services/userServices'
 
 /**
  * Wishlist Controller class
@@ -13,6 +15,7 @@ export default class WishlistController {
    * @returns {Promise<Response>} Promise that resolves to an Express response
    */
   static async addToWishlist(req: Request, res: Response): Promise<Response> {
+    try{
     const { productId } = req.params
 
     const buyerId = req.user?.id
@@ -60,6 +63,9 @@ export default class WishlistController {
       message: 'Product added to wishlist successfully',
       wishlist,
     })
+  } catch (error) {
+      return res.status(500).json({ message: 'Internal server error', error: error.message})
+  }
   }
 
   /**
@@ -69,20 +75,43 @@ export default class WishlistController {
    * @returns {Promise<Response>} Promise that resolves to an Express response
    */
   static async getWishlist(req: Request, res: Response): Promise<Response> {
+    try{
     const buyerId = req.user?.id
     if (!buyerId) {
       return res.status(400).json({ message: 'User ID are required' })
     }
 
+    const paginationResults = Paginator(req, res)
+
+    if(!paginationResults){
+      return res
+  .status(400)
+  .json({ message: 'Invalid pagination parameters' })
+}
+
+const {offset, limit, page} = paginationResults
+
+const totalCount: number = await getWishlistsCount(buyerId)
+const totalPages = Math.ceil(totalCount / limit)
+
     const wishlist = await Wishlist.findAll({
       where: { buyerId },
+      limit,
+      offset
     })
 
     if (!wishlist || wishlist.length === 0) {
       return res.status(404).json({ message: 'No product in wishlist' })
     }
 
-    return res.status(200).json(wishlist)
+    return res.status(200).json({ 
+      message: 'WishList retrieved successfully',
+      wishlist,
+      pagination: { limit, page, totalPages },
+    })
+  } catch (error) {
+    return res.status(500).json({message: 'Internal server error', error: error.message})
+  }
   }
 
   /**
@@ -95,6 +124,7 @@ export default class WishlistController {
     req: Request,
     res: Response,
   ): Promise<Response> {
+    try{
     const { productId } = req.params
     const buyerId = req.user?.id
 
@@ -126,5 +156,8 @@ export default class WishlistController {
       message: 'Product removed from wishlist successfully',
       updatedWishlist: wishlist,
     })
+  } catch (error) {
+    return res.status(500).json({message: 'Internal server error', error: error.message})
+  }
   }
 }

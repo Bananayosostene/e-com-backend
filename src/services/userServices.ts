@@ -1,6 +1,9 @@
 import { string } from 'joi'
+import { UUID } from 'crypto'
 import User from '../database/models/userModel'
 import UserProfile from '../database/models/userProfile'
+import Wishlist from '../database/models/wishlistModel'
+
 
 export const createUserProfile = async (userId: number) => {
   const existingUser = await User.findOne({ where: { id: userId } })
@@ -45,3 +48,19 @@ export const updateUserById = (fieldsToUpdate: object, id: number) =>
 
 export const updateUserProfileById = (fieldsToUpdate: object, id: number) =>
   UserProfile.update(fieldsToUpdate, { where: { userId: id } })
+
+export const getUsersCount = async () => {
+
+  const users = await User.findAll({
+      attributes: { exclude: ['password'] },    
+  })
+  return users.length
+}
+
+export const getWishlistsCount = async (buyerId:number|UUID) => {
+
+  const wishlist = await Wishlist.findAll({   
+    where: { buyerId }, 
+  })
+  return wishlist.length
+}

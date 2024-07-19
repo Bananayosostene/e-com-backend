@@ -29,10 +29,6 @@ export default class CheckoutController {
       email,
       deliveryDate,
       paymentMethod,
-      cardNumber,
-      cardHolderName,
-      expiryDate,
-      cvv,
       mobileMoneyNumber,
       orderNumber
     } = req.body
@@ -52,10 +48,6 @@ export default class CheckoutController {
     if (paymentMethod === 'creditCard') {
       paymentInfo = {
         method: paymentMethod,
-        cardNumber,
-        cardHolderName,
-        expiryDate,
-        cvv,
       }
     } else if (paymentMethod === 'mobileMoney') {
       paymentInfo = { method: paymentMethod, mobileMoneyNumber }

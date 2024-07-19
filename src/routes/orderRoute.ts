@@ -1,11 +1,17 @@
 import express from 'express'
 import isAuthenticated, {
-  checkPermission
+  checkPermission,
 } from '../middlewares/authenticationMiddleware'
-import { getorder, updateproductorder } from '../controllers/orderController';
-import { UserRole } from '../database/models/userModel';
-import { orderStatusSchema } from '../validations/orderValidation';
-import validateRequest from '../utils/validateRequest';
+import {
+  getAllorders,
+  getorder,
+  updateproductorder,
+  getSingleUserOrder,
+  getUserOrders,
+} from '../controllers/orderController'
+import { UserRole } from '../database/models/userModel'
+import { orderStatusSchema } from '../validations/orderValidation'
+import validateRequest from '../utils/validateRequest'
 
 const router = express.Router()
 
@@ -14,8 +20,20 @@ router.patch(
   isAuthenticated,
   checkPermission(UserRole.ADMIN),
   validateRequest(orderStatusSchema, 'body'),
-  updateproductorder
-);
-router.get('/', isAuthenticated,checkPermission(UserRole.BUYER), getorder);
+  updateproductorder,
+)
+router.get('/', isAuthenticated, checkPermission(UserRole.BUYER), getUserOrders)
+router.get(
+  '/:orderId',
+  isAuthenticated,
+  checkPermission(UserRole.BUYER),
+  getSingleUserOrder,
+)
+router.get(
+  '/all',
+  isAuthenticated,
+  checkPermission(UserRole.ADMIN),
+  getAllorders,
+)
 
 export default router

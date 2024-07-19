@@ -1,5 +1,8 @@
 import { Request, Response } from 'express'
 import Notification,{NotificationAttributes} from '../database/models/notificationModel'
+import Paginator from '../utils/paginator'
+import { getNotificationCount } from '../services/notificationServices';
+
 /**
  * Controller class for managing notifications-related operations ..
  */
@@ -16,50 +19,36 @@ class NotificationController {
   ): Promise<Response> {
     try {
       const userId = req.user.id
+      const paginationResults = Paginator(req, res)
+
+      if(!paginationResults){
+        return res
+    .status(400)
+    .json({ message: 'Invalid pagination parameters' })
+  }
+  
+  const {offset, limit, page} = paginationResults
+  
+  const totalCount: number = await getNotificationCount(userId)
+  const totalPages = Math.ceil(totalCount / limit)
+
       const notifications = await Notification.findAll({
         where: { userId },
         order: [['createdAt', 'DESC']],
+        limit,
+        offset
       })
 
-      return res.status(200).json({ data: notifications })
+      return res.status(200).json({ 
+        message: 'Notifications retrieved successfully',
+        notifications,
+        pagination: { limit, page, totalPages },
+      })
     } catch (error) {
       return res.status(500).json({ message: 'Internal server error' })
     }
   }
   
-  /**
-   * Get a single notification by ID and mark it as read.
-   * @param {AuthenticatedRequest} req - Express request object
-   * @param {Response} res - Express response object
-   * @returns {Promise<Response>} Promise that resolves to an Express response
-   */
-  static async getSingleNotification(
-    req: Request,
-    res: Response,
-  ): Promise<Response> {
-    try {
-      const { notificationId } = req.params;
-      const userId = req.user.id;
-
-      const notification = await Notification.findOne({
-        where: { id: notificationId, userId },
-      });
-
-      if (!notification) {
-        return res.status(404).json({ message: 'Notification not found' });
-      }
-
-      if (!notification.isRead) {
-        await notification.update({ isRead: true });
-      }
-
-      return res.status(200).json({ data: notification });
-    } catch (error) {
-
-      return res.status(500).json({ message: 'Internal server error', error: error.message });
-    }
-  }
-
 /**
  * Mark a notification as read or unread
  * @param {Request} req - Express request object

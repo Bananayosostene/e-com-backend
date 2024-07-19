@@ -13,10 +13,6 @@ export interface OrderItem {
 
 export interface PaymentInfo {
   method: 'creditCard' | 'mobileMoney'
-  cardNumber?: string
-  cardHolderName?: string
-  expiryDate?: string
-  cvv?: string
   mobileMoneyNumber?: string
 }
 
@@ -49,6 +45,8 @@ interface OrderAttributes {
   orderNumber: string
   expectedDeliveryDate: string
   reference:string
+  createdAt: Date
+  updatedAt: Date 
 
 }
 
@@ -70,9 +68,9 @@ class Order extends Model<OrderAttributes> implements OrderAttributes {
 
   public paymentInfo!: PaymentInfo
 
-  public orderNumber!: string;
+  public orderNumber!: string
 
-  public expectedDeliveryDate!: string;
+  public expectedDeliveryDate!: string
 
   public reference!: string
 
@@ -140,6 +138,16 @@ Order.init(
     reference: {
       type: DataTypes.STRING,
       allowNull: true,
+    },
+    createdAt: {
+      type: DataTypes.DATE,
+      allowNull: false,
+      defaultValue: DataTypes.NOW,
+    },
+    updatedAt: {
+      type: DataTypes.DATE,
+      allowNull: false,
+      defaultValue: DataTypes.NOW,
     },
   },
   {

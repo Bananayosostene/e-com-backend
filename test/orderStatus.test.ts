@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import sinon from 'sinon';
 import { Request, Response } from 'express';
 import Order, { OrderStatus } from '../src/database/models/orderModel';
-import { getorder, updateproductorder } from '../src/controllers/orderController';
+import { getAllorders, getorder, updateproductorder } from '../src/controllers/orderController';
 import OrderService from '../src/services/orderService';
 import eventEmitter from '../src/services/notificationServices';
 
@@ -144,4 +144,60 @@ describe('getorder', () => {
     expect(order.status).to.equal(OrderStatus.PENDING)
     expect(order.save).to.have.been.calledOnce
   })
+});
+describe('getAllorders', () => {
+  let req: Partial<Request>;
+  let res: Partial<Response>;
+  let statusStub: sinon.SinonStub;
+  let jsonStub: sinon.SinonStub;
+  let findAllStub: sinon.SinonStub;
+  
+
+  beforeEach(() => {
+    const page = ''
+    const limit = ''
+    req = {
+      query: { page, limit },
+    };
+
+    res = {
+      status: sinon.stub().returnsThis(),
+      json: sinon.stub()
+    };
+
+    statusStub = res.status as sinon.SinonStub;
+    jsonStub = res.json as sinon.SinonStub;
+    findAllStub = sinon.stub(Order, 'findAll')
+    
+  });
+
+  afterEach(() => {
+    sinon.restore();
+  });
+
+  it('should return 404 if order is not found', async () => {
+    findAllStub.resolves(null);
+
+    await getAllorders(req as Request, res as Response);
+
+    expect(statusStub.calledOnceWith(404)).to.be.true;
+  });
+
+  it('should return 200 and the order if found', async () => {
+    findAllStub.resolves();
+
+    await getAllorders(req as Request, res as Response);
+
+    expect(statusStub.calledOnceWith(200)).to.be.false;
+  });
+  
+
+  it('should return 500 if there is an error', async () => {
+    const error = new Error('Something went wrong');
+    findAllStub.throws(error);
+
+    await getAllorders(req as Request, res as Response);
+
+    expect(statusStub.calledOnceWith(500)).to.be.true;
+  });
 });

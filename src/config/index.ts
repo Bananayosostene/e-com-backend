@@ -1,3 +1,4 @@
+import exp from 'constants'
 import dotenv from 'dotenv'
 
 dotenv.config()
@@ -38,14 +39,16 @@ export const CLOUDINARY_API_KEY = process.env.CLOUDINARY_API_KEY
 export const CLOUDINARY_API_SECRET = process.env.CLOUDINARY_API_SECRET
 export const JWT_SECRET_RESET = process.env.JWT_SECRET_RESET
 export const CRON_TIME = process.env.CRON_TIME
-export const PASSWORD_EXPIRATION_TIME =parseInt(process.env.PASSWORD_EXPIRATION_TIME) || 90
+export const PASSWORD_EXPIRATION_TIME =
+  parseInt(process.env.PASSWORD_EXPIRATION_TIME) || 90
 export const URL = process.env.URL
-export const MOMO_API_KEY =  process.env.MOMO_API_KEY
-export const MOMO_XREFERENCED =  process.env.MOMO_XREFERENCED
-export const MOMO_URL =  process.env.MOMO_URL
-export const MOMO_SUBSCRIPTION_KEY =  process.env.MOMO_SUBSCRIPTION_KEY
-export const MOMO_TARGET_ENV  =  process.env.MOMO_TARGET_ENV 
-export const MOMO_CALLBACK_URL  =  process.env.MOMO_CALLBACK_URL 
+export const MOMO_API_KEY = process.env.MOMO_API_KEY
+export const MOMO_XREFERENCED = process.env.MOMO_XREFERENCED
+export const MOMO_URL = process.env.MOMO_URL
+export const MOMO_SUBSCRIPTION_KEY = process.env.MOMO_SUBSCRIPTION_KEY
+export const MOMO_TARGET_ENV = process.env.MOMO_TARGET_ENV
+export const MOMO_CALLBACK_URL = process.env.MOMO_CALLBACK_URL
 export const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY
 export const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET
-
+export const FRONTEND_URL = process.env.FRONTEND_URL
+export const RESET_BASE_URL = process.env.RESET_BASE_URL

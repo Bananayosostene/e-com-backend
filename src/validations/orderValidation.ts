@@ -12,26 +12,6 @@ const orderSchema = Joi.object({
   email: Joi.string().email().required(),
   deliveryDate: Joi.date().required(),
   paymentMethod: Joi.string().valid('creditCard', 'mobileMoney').required(),
-  cardHolderName: Joi.when('paymentMethod', {
-    is: 'creditCard',
-    then: Joi.string().required(),
-    otherwise: Joi.forbidden(),
-  }),
-  expiryDate: Joi.when('paymentMethod', {
-    is: 'creditCard',
-    then: Joi.string().required(),
-    otherwise: Joi.forbidden(),
-  }),
-  cvv: Joi.when('paymentMethod', {
-    is: 'creditCard',
-    then: Joi.string().length(3).required(),
-    otherwise: Joi.forbidden(),
-  }),
-  cardNumber: Joi.when('paymentMethod', {
-    is: 'creditCard',
-    then: Joi.string().creditCard().required(),
-    otherwise: Joi.forbidden(),
-  }),
   mobileMoneyNumber: Joi.when('paymentMethod', {
     is: 'mobileMoney',
     then: Joi.string()

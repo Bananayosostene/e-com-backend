@@ -5,6 +5,7 @@ import User from '../database/models/userModel'
 import Notification from '../database/models/notificationModel'
 import Order, { OrderItem } from '../database/models/orderModel'
 import { getUserById } from './userServices'
+import { UUID } from 'crypto'
 export const eventEmitter = new EventEmitter()
 
 eventEmitter.on('collection:created', async (collection) => {
@@ -61,7 +62,7 @@ eventEmitter.on('product:created', async (product) => {
   })
 
   const subject = 'Your product has been added'
-  const text = `Your product ${product.name} has been added! Check it out: ${product.url}`
+  const text = `Your product ${product.name} has been added! Check it out`
   await sendEmail(user.email, subject, text)
 
   users.forEach(async (user) => {
@@ -71,7 +72,7 @@ eventEmitter.on('product:created', async (product) => {
       message: `A new product has been added: ${product.name}`,
     })
     const subject = 'New product added'
-    const text = `We've added a new product: ${product.name}! Check it out: ${product.url}`
+    const text = `We've added a new product: ${product.name}! Check it out`
     await sendEmail(user.email, subject, text)
   })
 })
@@ -105,3 +106,13 @@ eventEmitter.on('order:updatedStatus', async (order: Order ) => {
   await sendEmail(user.email, subject, text)
 })
 export default eventEmitter
+
+
+export const getNotificationCount = async (userId:number|UUID) => {
+
+  const users = await Notification.findAll({
+    where: { userId },
+    order: [['createdAt', 'DESC']],  
+  })
+  return users.length
+}

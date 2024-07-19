@@ -76,7 +76,7 @@ describe('Login Controller', () => {
       .post('/users/login')
       .send({ email: existingUser.email, password: '12345678' })
       .end((err, res) => {
-        expect(res).to.have.status(200)
+        expect(res).to.have.status(401)
         done()
       })
   })

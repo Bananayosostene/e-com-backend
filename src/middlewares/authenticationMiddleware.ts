@@ -1,7 +1,8 @@
 import { Response, Request, NextFunction } from 'express'
 import { decodeToken } from '../utils/jwt'
 import { getUserById } from '../services/userServices'
-import { UserAttributes } from '../database/models/userModel'
+import { UserAttributes, UserRole } from '../database/models/userModel'
+import redisClient from '../utils/redisConfiguration'
 
 declare global {
   namespace Express {
@@ -34,11 +35,28 @@ const isAuthenticated = async (
 
       if(user.status === 'inactive'){
         return res.status(401).json({ message: 'User is disabled' });
-      }
+    }
+    
+    
+    const redisToken = await redisClient.get(`user:${user.id}`)
 
-    req.user = user
-    res.locals.decoded = user
-    next()
+     if (redisToken && redisToken === token) {
+       req.user = user
+       res.locals.decoded = user
+       return next()
+    }
+
+    if (user.userRole === UserRole.SELLER) {
+      const otpToken = await redisClient.get(user.email)
+      if (otpToken && otpToken.split('=')[1] === token) {
+        req.user = user
+        res.locals.decoded = user
+        return next()
+      }
+    }
+
+     return res.status(401).json({ message: 'Please login again' })
+
   } catch (error) {
     res
       .status(500)
